@@ -1,15 +1,39 @@
-from flask_restful import reqparse
 import numpy as np
 import tensorflow as tf
 
-from flask import Flask
+from flask import Flask, request
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
 app = Flask('First App')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
 
-@app.route("/compare")
+@app.route("/compare", methods = ['POST'])
 def comparePhoto():
+    def allowed_file(filename):
+        return '.' in filename and \
+               filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    def upload_file():
+        if request.method == 'POST':
+            # check if the post request has the file part
+            if 'file' not in request.files:
+                flash('No file part')
+                return redirect(request.url)
+            file = request.files['file']
+            # if user does not select file, browser also
+            # submit a empty part without filename
+            if file.filename == '':
+                flash('No selected file')
+                return redirect(request.url)
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save("uploads/" + filename)
+                input_text = filename
+            return filename
     def create_graph():
         """저장된(saved) GraphDef 파일로부터 graph를 생성하고 saver를 반환한다."""
         # 저장된(saved) graph_def.pb로부터 graph를 생성한다.
@@ -18,20 +42,15 @@ def comparePhoto():
             graph_def.ParseFromString(f.read())
             _ = tf.import_graph_def(graph_def, name='')
 
+
     result = {}
-
-    parser = reqparse.RequestParser()
-    parser.add_argument('path', required=True)
-    args = parser.parse_args()
-    input_text = args['path']
-
-    #imagePath = '/var/www/html/show/files/' + review_text
-    imagePath = input_text
+    imagePath = upload_file()
+    print("cccc " + imagePath)
     modelFullPath = '/tmp/output_graph.pb'                                      # 읽어들일 graph 파일 경로
     labelsFullPath = '/tmp/output_labels.txt'
 
     if not tf.gfile.Exists(imagePath):
-        tf.compat.logging.fatal('File does not exist %s', imagePath)
+        tf.logging.fatal('File does not exist %s', imagePath)
         return result
 
     image_data = tf.gfile.FastGFile(imagePath, 'rb').read()
