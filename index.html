@@ -3,11 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script src="https://unpkg.com/axios@0.24.0/dist/axios.min.js"></script>
 </head>
 <body>
-    <form method="post" enctype="multipart/form-data" action="http://192.168.23.102:8000/compare">
-        <input type="file" name="file"/>
-        <input type="submit" value="전송"/>
-    </form>
+    <input type="file" id="fileInput">
+    <button id="uploadButton">upload</button>
+    <div>
+        <p>프렌치 불독 <b id="french"></b> %</p>
+        <p>말티즈 <b id="mal"></b> %</p>
+        <p>시츄 <b id="shit"></b> %</p>
+    </div>
+  <script>
+    document.getElementById("uploadButton").onclick = () => {
+      let fileElement = document.getElementById('fileInput')
+
+      // check if user had selected a file
+      if (fileElement.files.length === 0) {
+        alert('please choose a file')
+        return
+      }
+
+      let file = fileElement.files[0]
+
+      let formData = new FormData();
+      formData.set('file', file);
+
+      axios.post("http://192.168.23.102:8000/compare", formData, {
+        onUploadProgress: progressEvent => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          console.log(`upload process: ${percentCompleted}%`);
+        }
+      })
+        .then(res => {
+          console.log(res.data)
+          var frenchPercent = document.getElementById('french');
+          var malPercent = document.getElementById('mal');
+          var shitPercent = document.getElementById('shit');
+
+          frenchPercent.innerHTML = res.data.frenchbulldog;
+          malPercent.innerHTML = res.data.maltese;
+          shitPercent.innerHTML = res.data.shitzu;
+        })
+    }
+
+  </script>
 </body>
 </html>

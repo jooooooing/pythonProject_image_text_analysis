@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-
+import time
 from flask import Flask, request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
@@ -30,8 +30,8 @@ def comparePhoto():
                 flash('No selected file')
                 return redirect(request.url)
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                file.save("uploads/" + filename)
+                filename = "uploads/" + str(int(time.time())) + ".jpg"
+                file.save(filename)
                 input_text = filename
             return filename
     def create_graph():
@@ -45,7 +45,6 @@ def comparePhoto():
 
     result = {}
     imagePath = upload_file()
-    print("cccc " + imagePath)
     modelFullPath = '/tmp/output_graph.pb'                                      # 읽어들일 graph 파일 경로
     labelsFullPath = '/tmp/output_labels.txt'
 
